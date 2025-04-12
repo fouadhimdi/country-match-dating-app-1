@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة التحكم - تطبيق المواعدة حسب البلد</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .sidebar {
+            background: linear-gradient(180deg, #6a11cb 0%, #2575fc 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        .sidebar .nav-link {
+            color: rgba(255,255,255,0.8);
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+        }
+        .sidebar .nav-link:hover, .sidebar .nav-link.active {
+            background-color: rgba(255,255,255,0.2);
+            color: white;
+        }
+        .sidebar .nav-link i {
+            margin-left: 10px;
+        }
+        .content-area {
+            padding: 2rem;
+        }
+        .match-card {
+            border-radius: 15px;
+            transition: transform 0.3s;
+        }
+        .match-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        .profile-section {
+            padding: 30px;
+            background-color: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .chat-container {
+            height: 70vh;
+            background-color: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .chat-header {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-top-left-radius: 15px;
+            border-top-right-radius: 15px;
+            border-bottom: 1px solid #e9ecef;
+        }
+        .chat-messages {
+            height: calc(70vh - 140px);
+            overflow-y: auto;
+            padding: 20px;
+        }
+        .chat-input {
+            padding: 15px;
+            border-top: 1px solid #e9ecef;
+        }
+        .message {
+            padding: 10px 15px;
+            border-radius: 20px;
+            margin-bottom: 10px;
+            max-width: 75%;
+        }
+        .message-sent {
+            background-color: #2575fc;
+            color: white;
+            margin-left: auto;
+        }
+        .message-received {
+            background-color: #e9ecef;
+            margin-right: auto;
+        }
+        .badge-status {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-left: 5px;
+        }
+        .badge-online {
+            background-color: #28a745;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-3 col-lg-2 sidebar p-4">
+                <h3 class="text-center mb-4">تطبيق المواعدة</h3>
+                <div class="text-center mb-4">
+                    <img id="userAvatar" src="https://ui-avatars.com/api/?name=User&background=random&color=fff" class="rounded-circle mb-2" width="80" height="80" alt="صورة المستخدم">
+                    <h6 id="userName" class="mb-0">اسم المستخدم</h6>
+                </div>
+                <hr class="my-4">
+                <div class="nav flex-column">
+                    <a href="#" class="nav-link active" data-page="matches"><i class="bi bi-heart-fill"></i> التطابقات</a>
+                    <a href="#" class="nav-link" data-page="browse"><i class="bi bi-search"></i> استعراض</a>
+                    <a href="#" class="nav-link" data-page="chats"><i class="bi bi-chat-dots-fill"></i> المحادثات</a>
+                    <a href="#" class="nav-link" data-page="profile"><i class="bi bi-person-fill"></i> الملف الشخصي</a>
+                    <a href="#" class="nav-link" data-page="settings"><i class="bi bi-gear-fill"></i> الإعدادات</a>
+                </div>
+                <hr class="my-4">
+                <div class="nav flex-column mt-auto">
+                    <a href="#" class="nav-link text-white-50" id="logoutBtn"><i class="bi bi-box-arrow-left"></i> تسجيل الخروج</a>
+                </div>
+            </div>
+
+            <!-- محتوى الصفحة -->
+            <div class="col-md-9 col-lg-10 content-area">
+                
+                <!-- صفحة التطابقات -->
+                <div id="matches-page" class="content-page">
+                    <h2 class="mb-4">التطابقات</h2>
+                    <div class="row" id="matchesContainer">
+                        <div class="col-12">
+                            <p class="text-muted text-center">يتم تحميل التطابقات...</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- صفحة الاستعراض -->
+                <div id="browse-page" class="content-page d-none">
+                    <h2 class="mb-4">استعراض</h2>
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="input-group">
+                                <select class="form-select" id="countryFilter">
+                                    <option value="">اختر البلد...</option>
+                                    <option value="السعودية">السعودية</option>
+                                    <option value="الإمارات">الإمارات</option>
+                                    <option value="مصر">مصر</option>
+                                    <option value="الكويت">الكويت</option>
+                                    <option value="قطر">قطر</option>
+                                    <option value="عمان">عمان</option>
+                                    <option value="البحرين">البحرين</option>
+                                    <option value="الأردن">الأردن</option>
+                                    <option value="لبنان">لبنان</option>
+                                </select>
+                                <button class="btn btn-primary" type="button" id="searchBtn">بحث</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row" id="searchResultsContainer">
+                        <div class="col-12">
+                            <p class="text-muted text-center">اختر بلدًا للبحث</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- صفحة المحادثات -->
+                <div id="chats-page" class="content-page d-none">
+                    <h2 class="mb-4">المحادثات</h2>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="list-group mb-4" id="chatsList">
+                                <a href="#" class="list-group-item list-group-item-action disabled text-muted text-center">
+                                    لا توجد محادثات حالية
+                                </a>
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <div class="chat-container">
+                                <div class="chat-header d-flex align-items-center">
+                                    <img src="https://ui-avatars.com/api/?name=User&background=random&color=fff" class="rounded-circle me-2" width="40" height="40" alt="">
+                                    <div>
+                                        <h6 class="mb-0" id="chatUserName">اسم المستخدم</h6>
+                                        <small class="text-muted d-none">متصل الآن <span class="badge-status badge-online"></span></small>
+                                    </div>
+                                </div>
+                                <div class="chat-messages" id="chatMessages">
+                                    <div class="text-center text-muted py-5">
+                                        <i class="bi bi-chat-dots fs-1"></i>
+                                        <p>اختر محادثة أو ابدأ محادثة جديدة</p>
+                                    </div>
+                                </div>
+                                <div class="chat-input">
+                                    <form id="chatForm">
+                                        <div class="input-group">
+                                            <input type="text" class="form-control" placeholder="اكتب رسالتك..." id="messageInput" disabled>
+                                            <button class="btn btn-primary" type="submit" id="sendMsgBtn" disabled>إرسال</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- صفحة الملف الشخصي -->
+                <div id="profile-page" class="content-page d-none">
+                    <h2 class="mb-4">الملف الشخصي</h2>
+                    <div class="profile-section">
+                        <form id="profileForm">
+                            <div class="row mb-4">
+                                <div class="col-md-4 text-center">
+                                    <img id="profileAvatar" src="https://ui-avatars.com/api/?name=User&background=random&color=fff" class="rounded-circle mb-3" width="120" height="120" alt="صورة الملف الشخصي">
+                                    <div>
+                                        <button type="button" class="btn btn-outline-primary btn-sm" disabled>تغيير الصورة</button>
+                                    </div>
+                                </div>
+                                <div class="col-md-8">
+                                    <div class="mb-3">
+                                        <label for="profileName" class="form-label">الاسم</label>
+                                        <input type="text" class="form-control" id="profileName" value="">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="profileEmail" class="form-label">البريد الإلكتروني</label>
+                                        <input type="email" class="form-control" id="profileEmail" value="" disabled>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label for="profileAge" class="form-label">العمر</label>
+                                            <input type="number" class="form-control" id="profileAge" min="18" value="">
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label for="profileGender" class="form-label">الجنس</label>
+                                            <select class="form-select" id="profileGender">
+                                                <option value="Male">ذكر</option>
+                                                <option value="Female">أنثى</option>
+                                                <option value="Other">آخر</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="profileBio" class="form-label">نبذة عني</label>
+                                <textarea class="form-control" id="profileBio" rows="3"></textarea>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="profileCountry" class="form-label">البلد</label>
+                                    <select class="form-select" id="profileCountry">
+                                        <option value="السعودية">السعودية</option>
+                                        <option value="الإمارات">الإمارات</option>
+                                        <option value="مصر">مصر</option>
+                                        <option value="الكويت">الكويت</option>
+                                        <option value="قطر">قطر</option>
+                                        <option value="عمان">عمان</option>
+                                        <option value="البحرين">البحرين</option>
+                                        <option value="الأردن">الأردن</option>
+                                        <option value="لبنان">لبنان</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="profileEthnicity" class="form-label">العرق</label>
+                                    <select class="form-select" id="profileEthnicity">
+                                        <option value="عربي">عربي</option>
+                                        <option value="آسيوي">آسيوي</option>
+                                        <option value="أفريقي">أفريقي</option>
+                                        <option value="أوروبي">أوروبي</option>
+                                        <option value="أمريكي">أمريكي</option>
+                                        <option value="متعدد الأعراق">متعدد الأعراق</option>
+                                        <option value="آخر">آخر</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">الهوايات</label>
+                                <div class="row" id="hobbiesContainer">
+                                    <div class="col-md-4 mb-2">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" value="القراءة" name="hobby">
+                                            <label class="form-check-label">القراءة</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4 mb-2">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" value="السفر" name="hobby">
+                                            <label class="form-check-label">السفر</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4 mb-2">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" value="الطبخ" name="hobby">
+                                            <label class="form-check-label">الطبخ</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4 mb-2">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" value="الرياضة" name="hobby">
+                                            <label class="form-check-label">الرياضة</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4 mb-2">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" value="الموسيقى" name="hobby">
+                                            <label class="form-check-label">الموسيقى</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">الأنشطة</label>
+                                <div class="row" id="activitiesContainer">
+                                    <div class="col-md-4 mb-2">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" value="زيارة المعالم السياحية" name="activity">
+                                            <label class="form-check-label">زيارة المعالم السياحية</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4 mb-2">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" value="التنزه في الحدائق" name="activity">
+                                            <label class="form-check-label">التنزه في الحدائق</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4 mb-2">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" value="تناول الطعام في المطاعم" name="activity">
+                                            <label class="form-check-label">تناول الطعام في المطاعم</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4 mb-2">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" value="الذهاب إلى السينما" name="activity">
+                                            <label class="form-check-label">الذهاب إلى السينما</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4 mb-2">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" value="الذهاب إلى الحفلات الموسيقية" name="activity">
+                                            <label class="form-check-label">الذهاب إلى الحفلات الموسيقية</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="text-end">
+                                <button type="submit" class="btn btn-primary">حفظ التغييرات</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                
+                <!-- صفحة الإعدادات -->
+                <div id="settings-page" class="content-page d-none">
+                    <h2 class="mb-4">الإعدادات</h2>
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">تغيير كلمة المرور</h5>
+                        </div>
+                        <div class="card-body">
+                            <form id="changePasswordForm">
+                                <div class="mb-3">
+                                    <label for="currentPassword" class="form-label">كلمة المرور الحالية</label>
+                                    <input type="password" class="form-control" id="currentPassword" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="newPassword" class="form-label">كلمة المرور الجديدة</label>
+                                    <input type="password" class="form-control" id="newPassword" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="confirmPassword" class="form-label">تأكيد كلمة المرور الجديدة</label>
+                                    <input type="password" class="form-control" id="confirmPassword" required>
+                                </div>
+                                <button type="submit" class="btn btn-primary">تغيير كلمة المرور</button>
+                            </form>
+                        </div>
+                    </div>
+                    
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">المستخدمين المحظورين</h5>
+                        </div>
+                        <div class="card-body">
+                            <ul class="list-group" id="blockedUsersList">
+                                <li class="list-group-item text-muted text-center">لا يوجد مستخدمين محظورين</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="card mb-4">
+                        <div class="card-header bg-danger text-white">
+                            <h5 class="mb-0">حذف الحساب</h5>
+                        </div>
+                        <div class="card-body">
+                            <p class="text-danger">تحذير: سيؤدي حذف حسابك إلى إزالة جميع بياناتك بشكل دائم. هذا الإجراء لا يمكن التراجع عنه.</p>
+                            <button type="button" class="btn btn-outline-danger" id="deleteAccountBtn">حذف الحساب</button>
+                        </div>
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+    </div>
+
+    <!-- نوافذ الحوار المنبثقة -->
+    
+    <!-- نافذة تأكيد حذف الحساب -->
+    <div class="modal fade" id="deleteAccountModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">تأكيد حذف الحساب</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>هل أنت متأكد من رغبتك في حذف حسابك نهائيًا؟</p>
+                    <p class="text-danger">لا يمكن التراجع عن هذا الإجراء.</p>
+                    <div class="mb-3">
+                        <label for="deleteConfirmPassword" class="form-label">أدخل كلمة المرور للتأكيد</label>
+                        <input type="password" class="form-control" id="deleteConfirmPassword">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="button" class="btn btn-danger" id="confirmDeleteAccountBtn">حذف الحساب نهائيًا</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- نافذة عرض الملف الشخصي -->
+    <div class="modal fade" id="viewProfileModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="viewProfileName">اسم المستخدم</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="text-center mb-3">
+                        <img id="viewProfileAvatar" src="" class="rounded-circle" width="100" height="100" alt="صورة المستخدم">
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-6">
+                            <p><strong>العمر:</strong> <span id="viewProfileAge"></span></p>
+                        </div>
+                        <div class="col-6">
+                            <p><strong>البلد:</strong> <span id="viewProfileCountry"></span></p>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <p><strong>نبذة:</strong></p>
+                        <p id="viewProfileBio" class="text-muted"></p>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>الهوايات:</strong></p>
+                            <ul id="viewProfileHobbies"></ul>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>الأنشطة:</strong></p>
+                            <ul id="viewProfileActivities"></ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-danger" id="blockUserBtn">
+                        <i class="bi bi-x-circle"></i> حظر المستخدم
+                    </button>
+                    <button type="button" class="btn btn-primary" id="startChatBtn">
+                        <i class="bi bi-chat-dots"></i> بدء محادثة
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // التحقق من وجود توكن المصادقة
+        document.addEventListener('DOMContentLoaded', function() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = '/index.html';
+                return;
+            }
+            
+            // تحميل بيانات المستخدم
+            loadUserData();
+            
+            // تحميل التطابقات
+            loadMatches();
+            
+            // إضافة مستمعي الأحداث
+            setupEventListeners();
+        });
+        
+        function loadUserData() {
+            const userString = localStorage.getItem('user');
+            if (!userString) return;
+            
+            const user = JSON.parse(userString);
+            
+            // تعيين اسم المستخدم والصورة الرمزية
+            document.getElementById('userName').textContent = user.name;
+            document.getElementById('userAvatar').src = user.profilePhoto || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=random&color=fff`;
+            
+            // ملء استمارة الملف الشخصي
+            document.getElementById('profileName').value = user.name;
+            document.getElementById('profileEmail').value = user.email;
+            document.getElementById('profileAge').value = user.age;
+            document.getElementById('profileGender').value = user.gender;
+            document.getElementById('profileCountry').value = user.country;
+            document.getElementById('profileEthnicity').value = user.ethnicity || 'عربي';
+            document.getElementById('profileBio').value = user.bio || '';
+            document.getElementById('profileAvatar').src = user.profilePhoto || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=random&color=fff`;
+            
+            // تحديد الهوايات والأنشطة
+            if (user.hobbies && Array.isArray(user.hobbies)) {
+                const hobbyCheckboxes = document.querySelectorAll('input[name="hobby"]');
+                hobbyCheckboxes.forEach(checkbox => {
+                    if (user.hobbies.includes(checkbox.value)) {
+                        checkbox.checked = true;
+                    }
+                });
+            }
+            
+            if (user.activities && Array.isArray(user.activities)) {
+                const activityCheckboxes = document.querySelectorAll('input[name="activity"]');
+                activityCheckboxes.forEach(checkbox => {
+                    if (user.activities.includes(checkbox.value)) {
+                        checkbox.checked = true;
+                    }
+                });
+            }
+        }
+        
+        async function loadMatches() {
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch('/api/matches', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    const matchesContainer = document.getElementById('matchesContainer');
+                    
+                    if (data.data.matches.length === 0) {
+                        matchesContainer.innerHTML = `
+                            <div class="col-12">
+                                <div class="alert alert-info text-center">
+                                    لا توجد تطابقات حتى الآن. اذهب إلى صفحة "استعراض" للبحث عن أشخاص جدد!
+                                </div>
+                            </div>
+                        `;
+                        return;
+                    }
+                    
+                    matchesContainer.innerHTML = '';
+                    
+                    data.data.matches.forEach(match => {
+                        // العثور على المستخدم المطابق (وليس المستخدم الحالي)
+                        const currentUserId = JSON.parse(localStorage.getItem('user'))._id;
+                        const matchedUser = match.users.find(user => user._id !== currentUserId);
+                        
+                        if (!matchedUser) return;
+                        
+                        const matchCard = document.createElement('div');
+                        matchCard.className = 'col-md-6 col-lg-4 mb-4';
+                        matchCard.innerHTML = `
+                            <div class="card match-card h-100">
+                                <div class="card-body text-center">
+                                    <img src="${matchedUser.profilePhoto || `https://ui-avatars.com/api/?name=${encodeURIComponent(matchedUser.name)}&background=random&color=fff`}" class="rounded-circle mb-3" width="80" height="80" alt="${matchedUser.name}">
+                                    <h5 class="card-title">${matchedUser.name}</h5>
+                                    <p class="card-text text-muted">${matchedUser.age} سنة، ${matchedUser.country}</p>
+                                    <div class="d-flex justify-content-center mb-3">
+                                        <span class="badge bg-primary me-2">${match.commonInterests.ethnicity ? 'العرق متطابق' : ''}</span>
+                                        <span class="badge bg-info me-2">هوايات مشتركة: ${match.commonInterests.hobbies.length}</span>
+                                        <span class="badge bg-success">أنشطة مشتركة: ${match.commonInterests.activities.length}</span>
+                                    </div>
+                                    <div class="d-grid gap-2">
+                                        <button class="btn btn-outline-primary btn-sm view-profile" data-user-id="${matchedUser._id}">عرض الملف الشخصي</button>
+                                        <button class="btn btn-primary btn-sm start-chat" data-user-id="${matchedUser._id}">بدء محادثة</button>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        
+                        matchesContainer.appendChild(matchCard);
+                    });
+                    
+                    // إضافة مستمعي الأحداث للأزرار
+                    document.querySelectorAll('.view-profile').forEach(button => {
+                        button.addEventListener('click', function() {
+                            const userId = this.getAttribute('data-user-id');
+                            viewUserProfile(userId);
+                        });
+                    });
+                    
+                    document.querySelectorAll('.start-chat').forEach(button => {
+                        button.addEventListener('click', function() {
+                            const userId = this.getAttribute('data-user-id');
+                            startChat(userId);
+                        });
+                    });
+                } else {
+                    showError('فشل في تحميل التطابقات');
+                }
+            } catch (error) {
+                console.error('Error loading matches:', error);
+                showError('حدث خطأ أثناء تحميل التطابقات');
+            }
+        }
+        
+        function setupEventListeners() {
+            // التنقل بين الصفحات
+            document.querySelectorAll('.sidebar .nav-link').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    // إزالة الفئة النشطة من جميع الروابط
+                    document.querySelectorAll('.sidebar .nav-link').forEach(l => {
+                        l.classList.remove('active');
+                    });
+                    
+                    // إضافة الفئة النشطة إلى الرابط المنقور عليه
+                    this.classList.add('active');
+                    
+                    // إخفاء جميع الصفحات
+                    document.querySelectorAll('.content-page').forEach(page => {
+                        page.classList.add('d-none');
+                    });
+                    
+                    // إظهار الصفحة المطلوبة
+                    const pageName = this.getAttribute('data-page');
+                    document.getElementById(`${pageName}-page`).classList.remove('d-none');
+                });
+            });
+            
+            // تسجيل الخروج
+            document.getElementById('logoutBtn').addEventListener('click', function(e) {
+                e.preventDefault();
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                window.location.href = '/index.html';
+            });
+            
+            // البحث عن المستخدمين حسب البلد
+            document.getElementById('searchBtn').addEventListener('click', function() {
+                const country = document.getElementById('countryFilter').value;
+                if (country) {
+                    searchUsersByCountry(country);
+                }
+            });
+            
+            // تحديث الملف الشخصي
+            document.getElementById('profileForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                updateProfile();
+            });
+            
+            // فتح نافذة حذف الحساب
+            document.getElementById('deleteAccountBtn').addEventListener('click', function() {
+                const deleteModal = new bootstrap.Modal(document.getElementById('deleteAccountModal'));
+                deleteModal.show();
+            });
+            
+            // حذف الحساب
+            document.getElementById('confirmDeleteAccountBtn').addEventListener('click', function() {
+                deleteAccount();
+            });
+            
+            // تغيير كلمة المرور
+            document.getElementById('changePasswordForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                changePassword();
+            });
+        }
+        
+        async function searchUsersByCountry(country) {
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch(`/api/matches/country/${country}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                const data = await response.json();
+                
+                const resultsContainer = document.getElementById('searchResultsContainer');
+                
+                if (response.ok) {
+                    if (data.data.matches.length === 0) {
+                        resultsContainer.innerHTML = `
+                            <div class="col-12">
+                                <div class="alert alert-info">
+                                    لا يوجد مستخدمون مطابقون في ${country}
+                                </div>
+                            </div>
+                        `;
+                        return;
+                    }
+                    
+                    resultsContainer.innerHTML = '';
+                    
+                    data.data.matches.forEach(match => {
+                        const userCard = document.createElement('div');
+                        userCard.className = 'col-md-6 col-lg-4 mb-4';
+                        userCard.innerHTML = `
+                            <div class="card match-card h-100">
+                                <div class="card-body text-center">
+                                    <img src="${match.user.profilePhoto || `https://ui-avatars.com/api/?name=${encodeURIComponent(match.user.name)}&background=random&color=fff`}" class="rounded-circle mb-3" width="80" height="80" alt="${match.user.name}">
+                                    <h5 class="card-title">${match.user.name}</h5>
+                                    <p class="card-text text-muted">${match.user.age} سنة، ${match.user.country}</p>
+                                    <p class="card-text">درجة التطابق: <span class="text-primary fw-bold">${match.matchScore}/3</span></p>
+                                    <div class="d-grid gap-2">
+                                        <button class="btn btn-outline-primary btn-sm view-profile-search" data-user-id="${match.user._id}">عرض الملف الشخصي</button>
+                                        <button class="btn btn-primary btn-sm create-match" data-user-id="${match.user._id}">إنشاء تطابق</button>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        
+                        resultsContainer.appendChild(userCard);
+                    });
+                    
+                    // إضافة مستمعي الأحداث للأزرار
+                    document.querySelectorAll('.view-profile-search').forEach(button => {
+                        button.addEventListener('click', function() {
+                            const userId = this.getAttribute('data-user-id');
+                            viewUserProfile(userId);
+                        });
+                    });
+                    
+                    document.querySelectorAll('.create-match').forEach(button => {
+                        button.addEventListener('click', function() {
+                            const userId = this.getAttribute('data-user-id');
+                            createMatch(userId);
+                        });
+                    });
+                } else {
+                    resultsContainer.innerHTML = `
+                        <div class="col-12">
+                            <div class="alert alert-danger">
+                                ${data.message || 'حدث خطأ أثناء البحث'}
+                            </div>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error searching users:', error);
+                document.getElementById('searchResultsContainer').innerHTML = `
+                    <div class="col-12">
+                        <div class="alert alert-danger">
+                            حدث خطأ أثناء البحث
+                        </div>
+                    </div>
+                `;
+            }
+        }
+        
+        async function viewUserProfile(userId) {
+            try {
+                // في التطبيق الحقيقي، ستقوم بجلب بيانات المستخدم من الخادم
+                // هذه بيانات وهمية للتوضيح فقط
+                const dummyUser = {
+                    _id: userId,
+                    name: 'سارة محمد',
+                    age: 27,
+                    country: 'السعودية',
+                    bio: 'أنا مهندسة برمجيات، أحب السفر واكتشاف ثقافات جديدة. أقضي وقت فراغي في القراءة وممارسة اليوغا.',
+                    hobbies: ['القراءة', 'السفر', 'اليوغا'],
+                    activities: ['زيارة المعالم السياحية', 'التنزه في الحدائق', 'تناول الطعام في المطاعم'],
+                    profilePhoto: `https://ui-avatars.com/api/?name=سارة+محمد&background=random&color=fff`
+                };
+                
+                // ملء نافذة الملف الشخصي بالبيانات
+                document.getElementById('viewProfileName').textContent = dummyUser.name;
+                document.getElementById('viewProfileAge').textContent = dummyUser.age;
+                document.getElementById('viewProfileCountry').textContent = dummyUser.country;
+                document.getElementById('viewProfileBio').textContent = dummyUser.bio || 'لا توجد نبذة';
+                document.getElementById('viewProfileAvatar').src = dummyUser.profilePhoto;
+                
+                // ملء الهوايات
+                const hobbiesList = document.getElementById('viewProfileHobbies');
+                hobbiesList.innerHTML = '';
+                if (dummyUser.hobbies && dummyUser.hobbies.length > 0) {
+                    dummyUser.hobbies.forEach(hobby => {
+                        const li = document.createElement('li');
+                        li.textContent = hobby;
+                        hobbiesList.appendChild(li);
+                    });
+                } else {
+                    hobbiesList.innerHTML = '<li class="text-muted">لا توجد هوايات</li>';
+                }
+                
+                // ملء الأنشطة
+                const activitiesList = document.getElementById('viewProfileActivities');
+                activitiesList.innerHTML = '';
+                if (dummyUser.activities && dummyUser.activities.length > 0) {
+                    dummyUser.activities.forEach(activity => {
+                        const li = document.createElement('li');
+                        li.textContent = activity;
+                        activitiesList.appendChild(li);
+                    });
+                } else {
+                    activitiesList.innerHTML = '<li class="text-muted">لا توجد أنشطة</li>';
+                }
+                
+                // تعيين معرف المستخدم للأزرار
+                document.getElementById('blockUserBtn').setAttribute('data-user-id', userId);
+                document.getElementById('startChatBtn').setAttribute('data-user-id', userId);
+                
+                // إضافة مستمعي الأحداث
+                document.getElementById('blockUserBtn').addEventListener('click', function() {
+                    blockUser(userId);
+                });
+                
+                document.getElementById('startChatBtn').addEventListener('click', function() {
+                    startChat(userId);
+                });
+                
+                // عرض النافذة المنبثقة
+                const profileModal = new bootstrap.Modal(document.getElementById('viewProfileModal'));
+                profileModal.show();
+            } catch (error) {
+                console.error('Error viewing profile:', error);
+                showError('حدث خطأ أثناء عرض الملف الشخصي');
+            }
+        }
+        
+        function showError(message) {
+            // يمكنك تنفيذ عرض رسائل الخطأ بالطريقة التي تناسبك
+            console.error(message);
+            alert(message);
+        }
+        
+        // وهمية: هذه وظائف تمثيلية فقط وستحتاج إلى استبدالها بالتنفيذ الحقيقي
+        async function createMatch(userId) {
+            alert(`تم إنشاء تطابق مع المستخدم ${userId}`);
+        }
+        
+        async function blockUser(userId) {
+            alert(`تم حظر المستخدم ${userId}`);
+        }
+        
+        async function startChat(userId) {
+            // تنقل إلى صفحة المحادثات
+            document.querySelectorAll('.sidebar .nav-link').forEach(l => {
+                l.classList.remove('active');
+            });
+            
+            document.querySelector('.sidebar .nav-link[data-page="chats"]').classList.add('active');
+            
+            document.querySelectorAll('.content-page').forEach(page => {
+                page.classList.add('d-none');
+            });
+            
+            document.getElementById('chats-page').classList.remove('d-none');
+            
+            alert(`بدء محادثة مع المستخدم ${userId}`);
+        }
+        
+        async function updateProfile() {
+            alert('تم تحديث الملف الشخصي');
+        }
+        
+        async function deleteAccount() {
+            alert('تم حذف الحساب');
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = '/index.html';
+        }
+        
+        async function changePassword() {
+            alert('تم تغيير كلمة المرور');
+        }
+    </script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

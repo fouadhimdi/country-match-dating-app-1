@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Country Match Dating App</title>
+    <link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+    <header>
+        <h1>Welcome to Country Match Dating App</h1>
+    </header>
+    <main>
+        <section id="user-registration">
+            <h2>Register</h2>
+            <form id="registration-form">
+                <input type="text" placeholder="Name" required>
+                <input type="number" placeholder="Age" required>
+                <select required>
+                    <option value="">Select Gender</option>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                    <option value="other">Other</option>
+                </select>
+                <input type="text" placeholder="Country" required>
+                <input type="text" placeholder="Ethnicity" required>
+                <input type="text" placeholder="Hobbies (comma separated)" required>
+                <input type="text" placeholder="Activities (comma separated)" required>
+                <button type="submit">Register</button>
+            </form>
+        </section>
+        <section id="user-login">
+            <h2>Login</h2>
+            <form id="login-form">
+                <input type="text" placeholder="Username" required>
+                <input type="password" placeholder="Password" required>
+                <button type="submit">Login</button>
+            </form>
+        </section>
+        <section id="matches">
+            <h2>Your Matches</h2>
+            <div id="matches-list"></div>
+        </section>
+    </main>
+    <footer>
+        <p>&copy; 2023 Country Match Dating App</p>
+    </footer>
+    <script src="app.js"></script>
+</body>
+</html>
